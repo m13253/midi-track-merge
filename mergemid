@@ -3,7 +3,7 @@
 import struct
 import sys
 
-def readuntil(f, buf):
+def ReadUntil(f, buf):
     buf=bytes(buf)
     if not len(buf):
         return
@@ -48,7 +48,7 @@ def PrintBigInt(n):
 
 def main(fnin, fnout):
     fin=open(fnin, "rb")
-    readuntil(fin, b'MThd')
+    ReadUntil(fin, b'MThd')
     mthd_len=struct.unpack('>L', ReadOrEOF(fin, 4))[0]
     assert mthd_len==6
     mthd=struct.unpack('>HHH', ReadOrEOF(fin, 6))
