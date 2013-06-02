@@ -37,7 +37,7 @@ def ScanBigInt(f):
         if t&0x80:
             res=(res<<7)|(t&0x7f)
         else:
-            return ((t<<7)|t, count)
+            return ((res<<7)|t, count)
 
 def PrintBigInt(n):
     res=struct.pack('>B', n&0x7f)
@@ -55,6 +55,7 @@ def main(fnin, fnout):
     assert mthd[0]==1
     events=[]
     last_no=0
+    max_time=0
     for trkno in range(mthd[1]):
         mtrk=ReadOrEOF(fin, 4)
         assert mtrk==b'MTrk'
@@ -62,7 +63,6 @@ def main(fnin, fnout):
         mtrk_len_read=0
         last_time=0
         last_meta=0x80
-        max_time=0
         while mtrk_len_read<mtrk_len:
             timestamp=ScanBigInt(fin)
             last_time+=timestamp[0]
@@ -93,7 +93,7 @@ def main(fnin, fnout):
             last_no+=1
     fin.close()
     events.sort()
-    print(', \n'.join(repr(event) for event in events))
+    print(',\n'.join(repr(event) for event in events))
     fout=open(fnout, 'wb')
     WriteAll(fout, struct.pack('>4sLHHH4sL', b'MThd', 6, 0, 1, mthd[2], b'MTrk', 0))
     write_len=0
