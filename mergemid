@@ -98,12 +98,12 @@ def main(fnin, fnout):
     WriteAll(fout, struct.pack('>4sLHHH4sL', b'MThd', 6, 0, 1, mthd[2], b'MTrk', 0))
     write_len=0
     last_time=0
-    last_meta=0
+    last_meta=b'\x00'
     for event in events:
         timestamp=event[0]-last_time
         last_time=event[0]
         assert timestamp>=0
-        if last_meta==event[2]:
+        if struct.unpack('>B', last_meta)[0]&0xf0!=0xf0 and last_meta==event[2]:
             write_buf=PrintBigInt(timestamp)+event[3]
         else:
             write_buf=PrintBigInt(timestamp)+event[2]+event[3]
@@ -128,4 +128,5 @@ if __name__=='__main__':
         try:
             sys.exit(main(sys.argv[1], sys.argv[2]))
         except Exception as e:
+            raise
             sys.stderr.write('Error: %s %s\n' % (type(e).__name__, e))
