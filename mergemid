@@ -77,6 +77,7 @@ def main(fnin, fnout):
                 mtrk_len_read+=1
             else:
                 meta, param=last_meta, meta
+                meta_int=struct.unpack('>B', meta)[0]
             if meta_int&0xf0==0xf0:
                 meta_data=ReadOrEOF(fin, 1)
                 meta_len=struct.unpack('>B', meta_data)[0]
