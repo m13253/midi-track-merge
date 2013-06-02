@@ -83,7 +83,7 @@ def main(fnin, fnout):
                 mtrk_len_read+=meta_len+1
                 if mtrk_len_read>mtrk_len: raise EOFError
                 meta_data+=ReadOrEOF(fin, meta_len)
-                if param!=0x4 and param!=0x2f:
+                if param!=b'\x03' and param!=b'\x04' and param!=b'\x2f':
                     events.append((last_time, last_no, meta, param+meta_data))
             else:
                 param+=ReadOrEOF(fin, 1)
@@ -93,6 +93,7 @@ def main(fnin, fnout):
             last_no+=1
     fin.close()
     events.sort()
+    print(', \n'.join(repr(event) for event in events))
     fout=open(fnout, 'wb')
     WriteAll(fout, struct.pack('>4sLHHH4sL', b'MThd', 6, 0, 1, mthd[2], b'MTrk', 0))
     write_len=0
@@ -103,9 +104,10 @@ def main(fnin, fnout):
         last_time=event[0]
         assert timestamp>=0
         if last_meta==event[2]:
-            write_buf=PrintBigInt(timestamp)+struct.pack('>B', event[2])+event[3]
-        else:
             write_buf=PrintBigInt(timestamp)+event[3]
+        else:
+            write_buf=PrintBigInt(timestamp)+event[2]+event[3]
+            last_meta=event[2]
         write_len+=len(write_buf)
         WriteAll(fout, write_buf)
     timestamp=max_time-last_time
