@@ -71,7 +71,7 @@ def main(fn):
                 mtrk_len_read+=meta_len+1
                 if mtrk_len_read>mtrk_len: raise EOFError
                 meta_data+=ReadOrEOF(f, meta_len)
-                sys.stdout.write('  <meta  time="%d+%d/%d" event="0x%02x" type="0x%02x" len="%d" data=' % (last_time/mthd[2], last_time%mthd[2], mthd[2], meta_int, param[0], meta_len))
+                sys.stdout.write('  <meta  time="%3d+%3d/%d" event="0x%02x" type="0x%02x" len="%d" data=' % (last_time/mthd[2], last_time%mthd[2], mthd[2], meta_int, param[0], meta_len))
                 if param[0]==0x51:
                     tempo=0
                     for tempoi in meta_data[1:]:
@@ -87,11 +87,11 @@ def main(fn):
                 param+=ReadOrEOF(f, 1)
                 mtrk_len_read+=1
                 if mtrk_len_read>mtrk_len: raise EOFError
-                sys.stdout.write('  <event time="%d+%d/%d" event="0x%x" channel="0x%02x" param="' % (last_time/mthd[2], last_time%mthd[2], mthd[2], meta_int>>4, meta_int&0xf))
+                sys.stdout.write('  <event time="%3d+%3d/%d" event="0x%x" channel="%2d" param="' % (last_time/mthd[2], last_time%mthd[2], mthd[2], meta_int>>4, (meta_int&0xf)+1))
                 if meta_int>>4 in (0x8, 0x9, 0xa):
-                    sys.stdout.write('%s%d %d" />\n' % (('C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')[param[0]%12], param[0]/12-1, param[1]))
+                    sys.stdout.write('%-3s %d" />\n' % ( '%s%d' % (('C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')[param[0]%12], param[0]/12-1), param[1]))
                 else:
-                    sys.stdout.write('0x%02x 0x%02x" />\n' % (param[0], param[1]))
+                    sys.stdout.write('0x%02x %d" />\n' % (param[0], param[1]))
         sys.stdout.write('%08x  </mtrk>\n' % f.tell())
     sys.stdout.write('%08x </mthd>\n' % f.tell())
     f.close()
