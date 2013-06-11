@@ -60,33 +60,30 @@ def main(fn):
             mtrk_len_read+=timestamp[1]+1
             if mtrk_len_read>=mtrk_len: raise EOFError
             if meta_int&0x80:
-                last_meta, param=meta, ReadOrEOF(f, 1)
-                mtrk_len_read+=1
+                last_meta, param=meta, ReadOrEOF(f, 2)
+                mtrk_len_read+=2
             else:
-                meta, param=last_meta, meta
+                meta, param=last_meta, meta+ReadOrEOF(f, 1)
+                mtrk_len_read+=1
                 meta_int=struct.unpack('>B', meta)[0]
             if meta_int&0xf0==0xf0:
-                meta_data=ReadOrEOF(f, 1)
-                meta_len=struct.unpack('>B', meta_data)[0]
-                mtrk_len_read+=meta_len+1
+                meta_len=struct.unpack('>BB', param)[1]
                 if mtrk_len_read>mtrk_len: raise EOFError
-                meta_data+=ReadOrEOF(f, meta_len)
-                sys.stdout.write('  <meta  time="%3d+%3d/%d" event="0x%02x" type="0x%02x" len="%d" data=' % (last_time/mthd[2], last_time%mthd[2], mthd[2], meta_int, param[0], meta_len))
+                meta_data=ReadOrEOF(f, meta_len)
+                mtrk_len_read+=meta_len
+                sys.stdout.write('  <meta  time="%3d+%3d/%d" event="0x%02x" type="0x%02x" len="%d" data=' % (last_time/mthd[2], last_time%mthd[2], mthd[2], meta_int, param[0], param[1]))
                 if param[0]==0x51:
                     tempo=0
-                    for tempoi in meta_data[1:]:
+                    for tempoi in meta_data:
                         tempo=(tempo<<8)|tempoi
                     sys.stdout.write('"%.2f" />\n' % (60000000.0/tempo))
                 elif param[0] in (0x54, 0x58):
-                    sys.stdout.write('"%s" />\n' % ' '.join([str(meta_datai) for meta_datai in meta_data[1:]]))
+                    sys.stdout.write('"%s" />\n' % ' '.join([str(meta_datai) for meta_datai in meta_data]))
                 elif param[0]==0x59 and meta_len==2:
-                    sys.stdout.write('"%s %s" />\n' % ((('C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#')[meta_data[1]] if meta_data[1] in range(0, 8) else ('B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F')[meta_data[1]-249] if meta_data[1] in range(249, 256) else meta_data[1]), (('Maj', 'min')[meta_data[2]] if meta_data[2] in (0, 1) else meta_data[2])))
+                    sys.stdout.write('"%s %s" />\n' % ((('C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#')[meta_data[0]] if meta_data[0] in range(0, 8) else ('B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F')[meta_data[0]-249] if meta_data[0] in range(249, 256) else meta_data[0]), (('Maj', 'min')[meta_data[1]] if meta_data[1] in (0, 1) else meta_data[1])))
                 else:
-                    sys.stdout.write('%s />\n' % json.dumps(meta_data[1:].decode('utf-8', 'replace'), ensure_ascii=False))
+                    sys.stdout.write('%s />\n' % json.dumps(meta_data.decode('utf-8', 'replace'), ensure_ascii=False))
             else:
-                param+=ReadOrEOF(f, 1)
-                mtrk_len_read+=1
-                if mtrk_len_read>mtrk_len: raise EOFError
                 sys.stdout.write('  <event time="%3d+%3d/%d" event="0x%x" channel="%2d" param="' % (last_time/mthd[2], last_time%mthd[2], mthd[2], meta_int>>4, (meta_int&0xf)+1))
                 if meta_int>>4 in (0x8, 0x9, 0xa):
                     sys.stdout.write('%-3s %d" />\n' % ( '%s%d' % (('C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')[param[0]%12], param[0]/12-1), param[1]))

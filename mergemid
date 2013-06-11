@@ -73,24 +73,21 @@ def main(fnin, fnout):
             mtrk_len_read+=timestamp[1]+1
             if mtrk_len_read>=mtrk_len: raise EOFError
             if meta_int&0x80:
-                last_meta, param=meta, ReadOrEOF(fin, 1)
-                mtrk_len_read+=1
+                last_meta, param=meta, ReadOrEOF(fin, 2)
+                mtrk_len_read+=2
             else:
-                meta, param=last_meta, meta
+                meta, param=last_meta, meta+ReadOrEOF(fin, 1)
+                mtrk_len_read+=1
                 meta_int=struct.unpack('>B', meta)[0]
             if meta_int&0xf0==0xf0:
-                meta_data=ReadOrEOF(fin, 1)
-                meta_len=struct.unpack('>B', meta_data)[0]
-                mtrk_len_read+=meta_len+1
+                meta_len=struct.unpack('>BB', param)[1]
                 if mtrk_len_read>mtrk_len: raise EOFError
-                meta_data+=ReadOrEOF(fin, meta_len)
-                if param!=b'\x03' and param!=b'\x04' and param!=b'\x2f':
-                    events.append((last_time, last_no, meta, param+meta_data))
+                meta_data=ReadOrEOF(fin, meta_len)
+                mtrk_len_read+=meta_len
+                if param[0] not in (b'\x03', b'\x04', b'\x2f'):
+                    events.append((last_time, last_no, meta, param, meta_data))
             else:
-                param+=ReadOrEOF(fin, 1)
-                mtrk_len_read+=1
-                if mtrk_len_read>mtrk_len: raise EOFError
-                events.append((last_time, last_no, meta, param))
+                events.append((last_time, last_no, meta, param, b''))
             last_no+=1
     fin.close()
     events.sort()
@@ -105,9 +102,9 @@ def main(fnin, fnout):
         last_time=event[0]
         assert timestamp>=0
         if struct.unpack('>B', last_meta)[0]&0xf0!=0xf0 and last_meta==event[2]:
-            write_buf=PrintBigInt(timestamp)+event[3]
+            write_buf=PrintBigInt(timestamp)+event[3]+event[4]
         else:
-            write_buf=PrintBigInt(timestamp)+event[2]+event[3]
+            write_buf=PrintBigInt(timestamp)+event[2]+event[3]+event[4]
             last_meta=event[2]
         write_len+=len(write_buf)
         WriteAll(fout, write_buf)
