@@ -101,7 +101,6 @@ def main(fnin, fnout):
             last_no+=1
     fin.close()
     events.sort()
-    print(',\n'.join(repr(event) for event in events))
     fout=open(fnout, 'wb')
     WriteAll(fout, struct.pack('>4sLHHH4sL', b'MThd', 6, 0, 1, mthd[2], b'MTrk', 0))
     write_len=0
