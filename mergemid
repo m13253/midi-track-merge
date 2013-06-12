@@ -56,6 +56,7 @@ def main(fnin, fnout):
     events=[]
     last_no=0
     max_time=0
+    have_title=False
     for trkno in range(mthd[1]):
         mtrk=ReadOrEOF(fin, 4)
         assert mtrk==b'MTrk'
@@ -73,20 +74,29 @@ def main(fnin, fnout):
             mtrk_len_read+=timestamp[1]+1
             if mtrk_len_read>=mtrk_len: raise EOFError
             if meta_int&0x80:
-                last_meta, param=meta, ReadOrEOF(fin, 2)
-                mtrk_len_read+=2
-            else:
-                meta, param=last_meta, meta+ReadOrEOF(fin, 1)
+                last_meta, param=meta, ReadOrEOF(fin, 1)
                 mtrk_len_read+=1
+            else:
+                meta, param=last_meta, meta
                 meta_int=struct.unpack('>B', meta)[0]
             if meta_int&0xf0==0xf0:
+                if mtrk_len_read>mtrk_len: raise EOFError
+                param+=ReadOrEOF(fin, 1)
+                mtrk_len_read+=1
                 meta_len=struct.unpack('>BB', param)[1]
                 if mtrk_len_read>mtrk_len: raise EOFError
                 meta_data=ReadOrEOF(fin, meta_len)
                 mtrk_len_read+=meta_len
-                if param[0] not in (b'\x03', b'\x04', b'\x2f'):
+                if param[0:1]==b'\x03' and not have_title:
+                    have_title=True
+                    events.append((last_time, last_no, meta, param, meta_data))
+                elif param[0:1] not in (b'\x03', b'\x04', b'\x2f'):
                     events.append((last_time, last_no, meta, param, meta_data))
             else:
+                if mtrk_len_read>mtrk_len: raise EOFError
+                if meta_int>>4 not in (0xc, 0xd):
+                    param+=ReadOrEOF(fin, 1)
+                    mtrk_len_read+=1
                 events.append((last_time, last_no, meta, param, b''))
             last_no+=1
     fin.close()
