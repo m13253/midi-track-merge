@@ -10,3 +10,7 @@ Usage
 
 `midid` script is for dumping MIDI file to plain text for debugging purposes. (like `mftext` script from package `abcmidi` do)
 
+Notice
+------
+
+This is a **Python** script, not **JavaScript**! Do not believe what GitHub says.
