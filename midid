@@ -65,7 +65,7 @@ def main(fn):
             else:
                 meta, param=last_meta, meta
                 meta_int=struct.unpack('>B', meta)[0]
-            if meta_int&0xf0==0xf0:
+            if meta_int==0xff:
                 if mtrk_len_read>mtrk_len: raise EOFError
                 param+=ReadOrEOF(f, 1)
                 mtrk_len_read+=1
@@ -85,6 +85,11 @@ def main(fn):
                     sys.stdout.write('"%s %s" />\n' % ((('C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#')[meta_data[0]] if meta_data[0] in range(0, 8) else ('B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F')[meta_data[0]-249] if meta_data[0] in range(249, 256) else meta_data[0]), (('Maj', 'min')[meta_data[1]] if meta_data[1] in (0, 1) else meta_data[1])))
                 else:
                     sys.stdout.write('%s />\n' % json.dumps(meta_data.decode('utf-8', 'replace'), ensure_ascii=False))
+            elif meta_int&0xf0==0xf0:
+                meta_len=struct.unpack('>B', param)[0]
+                if mtrk_len_read>mtrk_len: raise EOFError
+                meta_data=ReadOrEOF(fin, meta_len)
+                sys.stdout.write('  <sysex time="%d/%d" event="0x%02x" param=%s />\n' % (last_time, mthd[2], meta_int, json.dumps(meta_data.decode('utf-8', 'replace'), ensure_ascii=False)))
             else:
                 sys.stdout.write('  <event time="%d/%d" event="0x%x" channel="%2d" param="' % (last_time, mthd[2], meta_int>>4, (meta_int&0xf)+1))
                 if mtrk_len_read>mtrk_len: raise EOFError

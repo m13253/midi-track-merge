@@ -79,7 +79,7 @@ def main(fnin, fnout):
             else:
                 meta, param=last_meta, meta
                 meta_int=struct.unpack('>B', meta)[0]
-            if meta_int&0xf0==0xf0:
+            if meta_int==0xff:
                 if mtrk_len_read>mtrk_len: raise EOFError
                 param+=ReadOrEOF(fin, 1)
                 mtrk_len_read+=1
@@ -92,6 +92,11 @@ def main(fnin, fnout):
                     events.append((last_time, last_no, meta, param, meta_data))
                 elif param[0:1] not in (b'\x03', b'\x04', b'\x2f'):
                     events.append((last_time, last_no, meta, param, meta_data))
+            elif meta_int&0xf0==0xf0:
+                meta_len=struct.unpack('>B', param)[0]
+                if mtrk_len_read>mtrk_len: raise EOFError
+                meta_data=ReadOrEOF(fin, meta_len)
+                events.append((last_time, last_no, meta, param, meta_data))
             else:
                 if mtrk_len_read>mtrk_len: raise EOFError
                 if meta_int>>4 not in (0xc, 0xd):
