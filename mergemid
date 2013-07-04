@@ -28,11 +28,15 @@ def WriteAll(f, buf):
     if f.write(buf)!=len(buf):
         raise IOError('Error while writing file')
 
-def ScanBigInt(f):
+def ScanBigInt(f, prefix=b''):
     res=0
-    count=0
+    count=-len(prefix)
     while True:
-        t=struct.unpack('>B', ReadOrEOF(f, 1))[0]
+        if prefix:
+            t=struct.unpack('>B', prefix[0:1])[0]
+            prefix=prefix[1:]
+        else:
+            t=struct.unpack('>B', ReadOrEOF(f, 1))[0]
         count+=1
         if t&0x80:
             res=(res<<7)|(t&0x7f)
@@ -66,42 +70,48 @@ def main(fnin, fnout):
         last_meta=0x80
         while mtrk_len_read<mtrk_len:
             timestamp=ScanBigInt(fin)
+            mtrk_len_read+=timestamp[1]
+            if mtrk_len_read>=mtrk_len: raise EOFError
             last_time+=timestamp[0]
             if last_time>max_time:
                 max_time=last_time
             meta=ReadOrEOF(fin, 1)
-            meta_int=struct.unpack('>B', meta)[0]
-            mtrk_len_read+=timestamp[1]+1
+            mtrk_len_read+=1
             if mtrk_len_read>=mtrk_len: raise EOFError
+            meta_int=struct.unpack('>B', meta)[0]
             if meta_int&0x80:
                 last_meta, param=meta, ReadOrEOF(fin, 1)
                 mtrk_len_read+=1
+                if mtrk_len_read>mtrk_len: raise EOFError
             else:
                 meta, param=last_meta, meta
                 meta_int=struct.unpack('>B', meta)[0]
             if meta_int==0xff:
+                meta_len=ScanBigInt(fin)
+                mtrk_len_read+=meta_len[1]
                 if mtrk_len_read>mtrk_len: raise EOFError
-                param+=ReadOrEOF(fin, 1)
-                mtrk_len_read+=1
-                meta_len=struct.unpack('>BB', param)[1]
+                param+=PrintBigInt(meta_len[0])
+                meta_data=ReadOrEOF(fin, meta_len[0])
+                mtrk_len_read+=meta_len[0]
                 if mtrk_len_read>mtrk_len: raise EOFError
-                meta_data=ReadOrEOF(fin, meta_len)
-                mtrk_len_read+=meta_len
                 if param[0:1]==b'\x03' and not have_title:
                     have_title=True
                     events.append((last_time, last_no, meta, param, meta_data))
                 elif param[0:1] not in (b'\x03', b'\x04', b'\x2f'):
                     events.append((last_time, last_no, meta, param, meta_data))
             elif meta_int&0xf0==0xf0:
-                meta_len=struct.unpack('>B', param)[0]
+                meta_len=ScanBigInt(fin, param)
+                mtrk_len_read+=meta_len_tuple[1]
                 if mtrk_len_read>mtrk_len: raise EOFError
-                meta_data=ReadOrEOF(fin, meta_len)
-                events.append((last_time, last_no, meta, param, meta_data))
+                meta_data=ReadOrEOF(fin, meta_len[0])
+                mtrk_len_read+=meta_len[0]
+                if mtrk_len_read>mtrk_len: raise EOFError
+                events.append((last_time, last_no, meta, PrintBigInt(meta_len), meta_data))
             else:
-                if mtrk_len_read>mtrk_len: raise EOFError
                 if meta_int>>4 not in (0xc, 0xd):
                     param+=ReadOrEOF(fin, 1)
                     mtrk_len_read+=1
+                    if mtrk_len_read>mtrk_len: raise EOFError
                 events.append((last_time, last_no, meta, param, b''))
             last_no+=1
     fin.close()
