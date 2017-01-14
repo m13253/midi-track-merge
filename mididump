@@ -41,7 +41,7 @@ def ScanBigInt(f, prefix=b''):
             return ((res<<7)|t, count)
 
 def main(fn):
-    sys.stdout.write('<!--\n  Output of midid, a simple MIDI dump tool.\n  vim: ft=xml\n-->\n')
+    sys.stdout.write('<!--\n  Output of mididump, a simple MIDI dump tool.\n  vim: ft=xml\n-->\n')
     f=open(fn, "rb")
     ReadUntil(f, b'MThd')
     mthd_len=struct.unpack('>L', ReadOrEOF(f, 4))[0]
