@@ -97,7 +97,22 @@ def main(fn):
                 elif param[0] in (0x54, 0x58):
                     sys.stdout.write('"%s" />\n' % ' '.join([str(meta_datai) for meta_datai in meta_data]))
                 elif param[0] == 0x59 and meta_len[0] == 2:
-                    sys.stdout.write('"%s %s" />\n' % ((('C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#')[meta_data[0]] if meta_data[0] in range(0, 8) else ('B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F')[meta_data[0] - 249] if meta_data[0] in range(249, 256) else meta_data[0]), (('Maj', 'min')[meta_data[1]] if meta_data[1] in (0, 1) else meta_data[1])))
+                    if meta_data[1] == 0:
+                        if 0 <= meta_data[0] <= 7:
+                            sys.stdout.write('"%s Maj" />\n' % ('C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#')[meta_data[0]])
+                        elif 249 <= meta_data[0] <= 255:
+                            sys.stdout.write('"%s Maj" />\n' % ('Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F')[meta_data[0] - 249])
+                        else:
+                            sys.stdout.write('"%s Maj" />\n' % meta_data[0])
+                    elif meta_data[1] == 1:
+                        if 0 <= meta_data[0] <= 7:
+                            sys.stdout.write('"%s min" />\n' % ('A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#')[meta_data[0]])
+                        elif 249 <= meta_data[0] <= 255:
+                            sys.stdout.write('"%s min" />\n' % ('Ab', 'Eb', 'Bb', 'F', 'C', 'G', 'D')[meta_data[0] - 249])
+                        else:
+                            sys.stdout.write('"%s min" />\n' % meta_data[0])
+                    else:
+                        sys.stdout.write('"%s %s" />\n' % (meta_data[0], meta_data[1]))
                 else:
                     sys.stdout.write('%s />\n' % json.dumps(meta_data.decode('utf-8', 'replace'), ensure_ascii=False))
             elif meta_int & 0xf0 == 0xf0:
