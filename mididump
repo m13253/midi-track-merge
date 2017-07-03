@@ -94,7 +94,7 @@ def main(fn):
                     sys.stdout.write('%s />\n' % json.dumps(meta_data.decode('utf-8', 'replace'), ensure_ascii=False))
             elif meta_int&0xf0==0xf0:
                 meta_len=ScanBigInt(f, param)
-                mtrk_len_read+=meta_len_tuple[1]
+                mtrk_len_read+=meta_len[1]
                 if mtrk_len_read>mtrk_len: raise EOFError
                 meta_data=ReadOrEOF(f, meta_len[0])
                 mtrk_len_read+=meta_len[0]
