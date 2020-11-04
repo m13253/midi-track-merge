@@ -112,14 +112,14 @@ def main(fnin, fnout):
                     events.append((last_time, last_no, meta, param, meta_data))
             elif meta_int & 0xf0 == 0xf0:
                 meta_len = ScanBigInt(fin, param)
-                mtrk_len_read += meta_len_tuple[1]
+                mtrk_len_read += meta_len[1]
                 if mtrk_len_read > mtrk_len:
                     raise EOFError
                 meta_data = ReadOrEOF(fin, meta_len[0])
                 mtrk_len_read += meta_len[0]
                 if mtrk_len_read > mtrk_len:
                     raise EOFError
-                events.append((last_time, last_no, meta, PrintBigInt(meta_len), meta_data))
+                events.append((last_time, last_no, meta, PrintBigInt(meta_len[0]), meta_data))
             else:
                 if meta_int >> 4 not in (0xc, 0xd):
                     param += ReadOrEOF(fin, 1)
